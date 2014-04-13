@@ -1,4 +1,3 @@
-
 #include <string>
 #include <sstream>
 #include <iostream>
@@ -10,8 +9,7 @@
 // Todo: Add a log file which will output the html address of available items.
 // Need to remove any previous entry of it, then insert it at the bottom.
 // Timestamps would be helpful too?
-//
-// Todo: Add ability to be notified when an item is available?
+
 
 class Item
 {
@@ -69,10 +67,16 @@ int main( int argc, char* argv[] )
 {
 	std::string filename;
 	if ( argc < 2 ) {
-		std::cout << "USAGE " << argv[0] << " <items_file>\n";
+		std::cout << "USAGE " << argv[0] << " <items_filename>\n";
 		return 1;
 	} else {
 		filename = argv[ 1 ];
+	}
+	
+	std::ifstream temp( filename.c_str() );
+	if ( !temp ) {
+		std::cout << "Failed to find file: " << filename << "\n";
+		return 1;
 	}
 	
 	std::string amazonBuyPage = "http://www.amazon.com/gp/offer-listing/";
@@ -84,24 +88,34 @@ int main( int argc, char* argv[] )
 	{
 		std::string download = "wget " + amazonBuyPage + item.id
 							+ " -O .tmp/" + item.id + hideOutput;
-		int ret = 0;
 		int tries = 0;
 		bool downloaded = false;
 		
-	  	while( !downloaded ) {
-			ret = system( download.c_str() );
-			if ( ret ) {
-				if ( (ret == 2048) && (tries <= 10) ) {
-					++tries;
-					continue;
-				} else {
-					std::cout << "Failed to download " << item.name
-							<< "'s product page.\n";
-					break;
-				}
+	  	while ( !downloaded ) {
+	  		if ( tries >= 10 ) {
+				std::cout << "Failed to download " << item.name
+						<< "'s product page.\n";
+				return 1;
+	  		}
+	  		++tries;
+			
+			int ret = system( download.c_str() );
+			
+			switch ( ret ) {
+			case 0:
+				downloaded = true;
+				break;
+			case 2048:
+				//Error 503: Service Unavailable.
+				continue;
+			case 256:
+				system( "mkdir -p .tmp" );
+				continue;
+			default:
+				std::cout << "Error Code: " << ret << "\n";
+				continue;
 			}
-			downloaded = true;
-		};
+		}
 		
 		std::vector<Result> results = getPrices( ".tmp/" + item.id );
 		std::sort( results.begin(), results.end(),
@@ -138,7 +152,7 @@ void notifyResults( Item item, std::vector<Result> results )
 	std::string notify = "notify-send -t 10 -a FindPrice -i browser \""
 					+ item.name + " Is Available!\" \"" + str.str() + "\"";
 	system( notify.c_str() );
-	std::cout << item.name << " Is Available!\n" << str.str() << "\n";
+	std::cout << item.name << " Is Available!\n" << str.str();
 	system( ("aplay notify.wav " + hideOutput ).c_str() );
 }
 

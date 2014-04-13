@@ -7,6 +7,7 @@ C++ Linux "script" that notifies you when any of your specified Amazon items fal
 ### Requirements
 	Linux
 	wget
+	aplay
 	notify-send
 
 
@@ -22,11 +23,11 @@ want. At this page the id you need is usually after "offer-listing/" in the
 URL.
 
 
-#### To test the program run:
+#### To test the program, run:
 	make
-	./WishList Items
+	./WishListNotifier MyWishList
 
-You can run "./run_wish_list.sh" to automatically run the program. It checks every 5min
+You can run "./run_wish_list_notifier.sh" to automatically run the program. It checks every 5min
 (300 seconds) by default.
 
 

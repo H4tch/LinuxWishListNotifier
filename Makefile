@@ -1,3 +1,3 @@
 
 all:
-	g++ --std=c++11 *.cpp -o WishList
+	g++ --std=c++11 *.cpp -o WishListNotifier
