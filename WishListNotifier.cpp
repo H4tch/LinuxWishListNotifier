@@ -87,7 +87,7 @@ int main( int argc, char* argv[] )
 	for ( auto item : items )
 	{
 		std::string download = "wget " + amazonBuyPage + item.id
-							+ " -O .tmp/" + item.id + hideOutput;
+							+ " -O ~" + item.id + hideOutput;
 		int tries = 0;
 		bool downloaded = false;
 		
@@ -108,16 +108,13 @@ int main( int argc, char* argv[] )
 			case 2048:
 				//Error 503: Service Unavailable.
 				continue;
-			case 256:
-				system( "mkdir -p .tmp" );
-				continue;
 			default:
 				std::cout << "Error Code: " << ret << "\n";
 				continue;
 			}
 		}
 		
-		std::vector<Result> results = getPrices( ".tmp/" + item.id );
+		std::vector<Result> results = getPrices( "~" + item.id );
 		std::sort( results.begin(), results.end(),
 			[]( const Result& p1, const Result& p2  ) {
 				return p2.price < p1.price;
@@ -125,6 +122,7 @@ int main( int argc, char* argv[] )
 		
 		//std::cout << results << "\n";
 		notifyResults( item, results );
+		system( ("rm ~" + item.id).c_str() );
 	}
 	
 	return 0;
