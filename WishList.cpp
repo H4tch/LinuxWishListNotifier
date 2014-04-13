@@ -58,7 +58,7 @@ std::ostream& operator<<( std::ostream& os, const std::vector<T> v ) {
 }
 
 
-const char* hideOutput = " > /dev/null 2>&1";
+std::string hideOutput = " > /dev/null 2>&1";
 
 std::vector<Item> getItems( std::string filename );
 std::vector<Result> getPrices( std::string filename );
@@ -139,6 +139,7 @@ void notifyResults( Item item, std::vector<Result> results )
 					+ item.name + " Is Available!\" \"" + str.str() + "\"";
 	system( notify.c_str() );
 	std::cout << item.name << " Is Available!\n" << str.str() << "\n";
+	system( ("aplay notify.wav " + hideOutput ).c_str() );
 }
 
 
