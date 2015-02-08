@@ -5,21 +5,39 @@
 #include <vector>
 #include <algorithm>
 
+typedef std::string String;
 
 // Todo: Add a log file which will output the html address of available items.
 // Need to remove any previous entry of it, then insert it at the bottom.
 // Timestamps would be helpful too?
+//
+// Todo: Add ability to specify your budget within the WishList file, so it
+// won't notify you if an item is available unless it also falls below your
+// budget.
 
+#define MUSIC_FILE "notify.wav"
+#ifdef __APPLE__
+	#define MUSIC_CMD "aplay"
+	#define NOTIFY "display notification"
+	#define NOTIFY_TITLE " with title "
+#else
+	#define MUSIC_CMD "aplay"
+	#define NOTIFY "notify-send -t 10 -a FindPrice -i browser \""
+	#define NOTIFY_TITLE ""
+#endif
 
-class Item
-{
+String amazonBuyPage = "http://www.amazon.com/gp/offer-listing/";
+String musicFile;
+String hideOutput = " > /dev/null 2>&1";
+
+class Item {
 public:
-	Item( std::string name, std::string id, double desiredPrice )
+	Item( String name, String id, double desiredPrice )
 		: name( name ), id( id ), desiredPrice( desiredPrice )
 	{}
 	
-	std::string name;
-	std::string id;
+	String name;
+	String id;
 	double desiredPrice = 0;
 	
 	friend std::ostream& operator<<( std::ostream& os, const Item& item ) {
@@ -30,10 +48,10 @@ public:
 
 class Result {
 public:
-	Result( std::string condition, double price )
+	Result( String condition, double price )
 		: condition( condition ), price( price )
 	{}
-	std::string condition;
+	String condition;
 	double price = 0;
 	friend std::ostream& operator<<( std::ostream& os, const Result& res ) {
 		return os << res.condition << " " << res.price;
@@ -56,16 +74,13 @@ std::ostream& operator<<( std::ostream& os, const std::vector<T> v ) {
 }
 
 
-std::string hideOutput = " > /dev/null 2>&1";
-
-std::vector<Item> getItems( std::string filename );
-std::vector<Result> getPrices( std::string filename );
+std::vector<Item> getItems( String filename );
+std::vector<Result> getPrices( String filename );
 void notifyResults( Item item, std::vector<Result> results );
 
 
-int main( int argc, char* argv[] )
-{
-	std::string filename;
+int main( int argc, char* argv[] ) {
+	String filename;
 	if ( argc < 2 ) {
 		std::cout << "USAGE " << argv[0] << " <items_filename>\n";
 		return 1;
@@ -76,17 +91,15 @@ int main( int argc, char* argv[] )
 	std::ifstream temp( filename.c_str() );
 	if ( !temp ) {
 		std::cout << "Failed to find file: " << filename << "\n";
+		//std::cout << "Attempting to parse Item" << "\n";
 		return 1;
 	}
-	
-	std::string amazonBuyPage = "http://www.amazon.com/gp/offer-listing/";
 	
 	std::vector<Item> items = getItems( filename );
 	//std::cout << "Items: " << items << "\n";
 	
-	for ( auto item : items )
-	{
-		std::string download = "wget " + amazonBuyPage + item.id
+	for ( auto item : items ) {
+		String download = "wget " + amazonBuyPage + item.id
 							+ " -O ~" + item.id + hideOutput;
 		int tries = 0;
 		bool downloaded = false;
@@ -95,7 +108,7 @@ int main( int argc, char* argv[] )
 	  		if ( tries >= 10 ) {
 				std::cout << "Failed to download " << item.name
 						<< "'s product page.\n";
-				return 1;
+				return 0;
 	  		}
 	  		++tries;
 			
@@ -130,8 +143,7 @@ int main( int argc, char* argv[] )
 
 
 
-void notifyResults( Item item, std::vector<Result> results )
-{
+void notifyResults( Item item, std::vector<Result> results ) {
 	std::vector<Result> matches;
 	for ( auto result : results ) {
 		if ( result.price && (result.price <= item.desiredPrice) ) {
@@ -147,23 +159,23 @@ void notifyResults( Item item, std::vector<Result> results )
 	for ( auto m : matches ) {
 		str << m.condition << "  " << m.price << "\n";
 	}
-	std::string notify = "notify-send -t 10 -a FindPrice -i browser \""
-					+ item.name + " Is Available!\" \"" + str.str() + "\"";
+	String notify = String(NOTIFY) + item.name + " Is Available!\" \""
+					+ str.str() + "\"";
 	system( notify.c_str() );
 	std::cout << item.name << " Is Available!\n" << str.str();
-	system( ("aplay notify.wav " + hideOutput ).c_str() );
+	system( (MUSIC_CMD " " MUSIC_FILE + hideOutput ).c_str() );
 }
 
 
-std::vector<Item> getItems( std::string filename )
-{
+/// TODO This should take in a String...
+std::vector<Item> getItems( String filename ) {
 	std::vector<Item> items;
 	std::ifstream file( filename.c_str() );
-	std::string str;
+	String str;
 	std::stringstream line;
-	std::string desc;
-	std::string id;
-	std::string price;
+	String desc;
+	String id;
+	String price;
 	
 	while( getline( file, str ) ) {
 		line.str( "" );
@@ -177,20 +189,19 @@ std::vector<Item> getItems( std::string filename )
 }
 
 
-void findPriceInString( std::string& line, std::string match, double& price ) {
+void findPriceInString( String& line, String match, double& price ) {
 	int pos = line.find( match );
 	if ( pos != -1 ) {
-		std::string str = line.substr( pos + match.length() + 1, 6 );
+		String str = line.substr( pos + match.length() + 1, 6 );
 		price = std::stod( str );
 	}
 }
 
 
 std::vector<Result>
-getPrices( std::string filename )
-{
+getPrices( String filename ) {
 	std::ifstream file( filename.c_str() );
-	std::string line;
+	String line;
 	int lineN = 0;
 	double priceNew = 0;
 	double priceUsed = 0;
