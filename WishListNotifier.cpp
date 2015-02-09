@@ -7,28 +7,34 @@
 
 typedef std::string String;
 
-// Todo: Add a log file which will output the html address of available items.
-// Need to remove any previous entry of it, then insert it at the bottom.
-// Timestamps would be helpful too?
-//
-// Todo: Add ability to specify your budget within the WishList file, so it
-// won't notify you if an item is available unless it also falls below your
-// budget.
+/// Todo
+/// Display the Image of the Item within Notification
+/// Add ability to set a budget
+/// 	Any Items available that are more than the budget won't be displayed
+/// Windows won't be supported unless I fetch the webapge myself.
 
-#define MUSIC_FILE "notify.wav"
-#ifdef __APPLE__
-	#define MUSIC_CMD "aplay"
-	#define NOTIFY "display notification"
-	#define NOTIFY_TITLE " with title "
+#ifdef WIN32
+	#define MUSIC_CMD "mplay32 /play /close"
+	#define NOTIFY ""
+	#define NOTIFY_TITLE " "
 #else
-	#define MUSIC_CMD "aplay"
-	#define NOTIFY "notify-send -t 10 -a FindPrice -i browser \""
-	#define NOTIFY_TITLE ""
+	#ifdef __APPLE__
+		#define MUSIC_CMD "aplay"
+		#define NOTIFY "display notification"
+		#define NOTIFY_TITLE " with title "
+	#else // Linux/Unix
+		#define MUSIC_CMD "aplay"
+		#define NOTIFY "notify-send -t 10 -a FindPrice -i browser \""
+		#define NOTIFY_TITLE ""
+	#endif
 #endif
 
+
+#define MUSIC_FILE "notify.wav"
 String amazonBuyPage = "http://www.amazon.com/gp/offer-listing/";
 String musicFile;
 String hideOutput = " > /dev/null 2>&1";
+
 
 class Item {
 public:
@@ -64,9 +70,7 @@ template<typename T>
 std::ostream& operator<<( std::ostream& os, const std::vector<T> v ) {
 	os << "[ ";
 	if ( !v.empty() ) {
-		for ( int i = 0; i < v.size() - 1; ++i ) {
-			os << v[i] << ", ";
-		}
+		for ( int i = 0; i < v.size() - 1; ++i ) { os << v[i] << ", "; }
 		os << v.back() << " ";
 	}
 	os << "]";
@@ -96,7 +100,7 @@ int main( int argc, char* argv[] ) {
 	}
 	
 	std::vector<Item> items = getItems( filename );
-	//std::cout << "Items: " << items << "\n";
+	//std::cout << "Got Items: " << items << "\n";
 	
 	for ( auto item : items ) {
 		String download = "wget " + amazonBuyPage + item.id
@@ -113,7 +117,6 @@ int main( int argc, char* argv[] ) {
 	  		++tries;
 			
 			int ret = system( download.c_str() );
-			
 			switch ( ret ) {
 			case 0:
 				downloaded = true;
@@ -156,23 +159,22 @@ void notifyResults( Item item, std::vector<Result> results ) {
 	std::stringstream str;
 	str.precision( 2 );
 	str << std::fixed;
-	for ( auto m : matches ) {
-		str << m.condition << "  " << m.price << "\n";
-	}
+	for ( auto m : matches ) { str << m.condition << "\t" << m.price << "\n"; }
 	String notify = String(NOTIFY) + item.name + " Is Available!\" \""
 					+ str.str() + "\"";
 	system( notify.c_str() );
 	std::cout << item.name << " Is Available!\n" << str.str();
+	std::cout << amazonBuyPage << item.id << "\n\n";
 	system( (MUSIC_CMD " " MUSIC_FILE + hideOutput ).c_str() );
 }
 
 
-/// TODO This should take in a String...
 std::vector<Item> getItems( String filename ) {
-	std::vector<Item> items;
 	std::ifstream file( filename.c_str() );
 	String str;
 	std::stringstream line;
+	
+	std::vector<Item> items;
 	String desc;
 	String id;
 	String price;
@@ -192,6 +194,7 @@ std::vector<Item> getItems( String filename ) {
 void findPriceInString( String& line, String match, double& price ) {
 	int pos = line.find( match );
 	if ( pos != -1 ) {
+		// Captures arbitrary characters representing the price. Fix eventually.
 		String str = line.substr( pos + match.length() + 1, 6 );
 		price = std::stod( str );
 	}
