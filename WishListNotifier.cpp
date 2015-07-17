@@ -65,7 +65,7 @@ public:
 };
 
 
-
+// Print a Vector to a std::ostream
 template<typename T>
 std::ostream& operator<<( std::ostream& os, const std::vector<T> v ) {
 	os << "[ ";
@@ -201,8 +201,7 @@ void findPriceInString( String& line, String match, double& price ) {
 }
 
 
-std::vector<Result>
-getPrices( String filename ) {
+std::vector<Result> getPrices( String filename ) {
 	std::ifstream file( filename.c_str() );
 	String line;
 	int lineN = 0;
@@ -223,6 +222,5 @@ getPrices( String filename ) {
 		};
 	return arr;
 }
-
 
 

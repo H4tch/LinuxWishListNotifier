@@ -7,7 +7,7 @@ cat $WISHLIST
 if ( test $? -ne 0 ); then exit 1; fi
 
 while true; do
-	cd ~/Projects/LinuxWishListNotifier/
+	cd ~/Projects/WishListNotifier/
 	./WishListNotifier $WISHLIST
 	if (test $? -eq 1) then
 		echo "Quitting..."
