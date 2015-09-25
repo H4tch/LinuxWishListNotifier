@@ -8,32 +8,47 @@
 typedef std::string String;
 
 /// Todo
-/// Display the Image of the Item within Notification
-/// Add ability to set a budget
-/// 	Any Items available that are more than the budget won't be displayed
-/// Windows won't be supported unless I fetch the webapge myself.
+/// Display the Image of the Item within the Notification
+/// Ability to set a budget
+/// 	Items available that are more than the budget won't be displayed
+/// Windows won't be supported unless I fetch the webapge myself
+/// 	Use Sockets to resolve the address and GET the page
+
+String audioFile = "notify.wav";
+String amazonBuyPage = "http://www.amazon.com/gp/offer-listing/";
 
 #ifdef WIN32
-	#define MUSIC_CMD "mplay32 /play /close"
-	#define NOTIFY ""
-	#define NOTIFY_TITLE " "
+	String hideOutput = "";
+	void notification( String title, String text ) {
+		//String cmd = String("") + title + text;
+		//system(cmd.c_str());
+	}
+	void playSound( String file ) {
+		String cmd = String("mplay32 /play /close ") + file;
+		system(cmd.c_str());
+	}
 #else
+	String hideOutput =  "> /dev/null 2>&1";
 	#ifdef __APPLE__
-		#define MUSIC_CMD "aplay"
-		#define NOTIFY "display notification"
-		#define NOTIFY_TITLE " with title "
+		void notification( String title, String text ) {
+			String cmd = String("osascript -e 'display notification \"") + text + String("\" with title \"") + title + String("\"\'") + hideOutput;
+			system(cmd.c_str());
+		}
+		void playSound( String file ) {
+			String cmd = String("playsound ") + file + hideOutput;
+			system(cmd.c_str());
+		}
 	#else // Linux/Unix
-		#define MUSIC_CMD "aplay"
-		#define NOTIFY "notify-send -t 10 -a FindPrice -i browser \""
-		#define NOTIFY_TITLE ""
+		void notification( String title, String text ) {
+			String cmd = String("notify-send -t 10 -a WishList -i browser \"") + title String("\" \"") + text + String("\"") + hideOutput;
+			system(cmd.c_str());
+		}
+		void playSound( String file ) {
+			String cmd = String("aplay ") + file + hideOutput;
+			system(cmd.c_str());
+		}
 	#endif
 #endif
-
-
-#define MUSIC_FILE "notify.wav"
-String amazonBuyPage = "http://www.amazon.com/gp/offer-listing/";
-String musicFile;
-String hideOutput = " > /dev/null 2>&1";
 
 
 class Item {
@@ -160,12 +175,11 @@ void notifyResults( Item item, std::vector<Result> results ) {
 	str.precision( 2 );
 	str << std::fixed;
 	for ( auto m : matches ) { str << m.condition << "\t" << m.price << "\n"; }
-	String notify = String(NOTIFY) + item.name + " Is Available!\" \""
-					+ str.str() + "\"";
-	system( notify.c_str() );
-	std::cout << item.name << " Is Available!\n" << str.str();
-	std::cout << amazonBuyPage << item.id << "\n\n";
-	system( (MUSIC_CMD " " MUSIC_FILE + hideOutput ).c_str() );
+	String title = item.name + " Is Available!";
+	String text = str.str();
+	std::cout << title << "\n" << text << amazonBuyPage << item.id << "\n\n";
+	playSound( audioFile );
+	notification( title, text );
 }
 
 
