@@ -40,7 +40,7 @@ String amazonBuyPage = "http://www.amazon.com/gp/offer-listing/";
 		}
 	#else // Linux/Unix
 		void notification( String title, String text ) {
-			String cmd = String("notify-send -t 10 -a WishList -i browser \"") + title String("\" \"") + text + String("\"") + hideOutput;
+			String cmd = String("notify-send -t 10 -a WishList -i browser \"") + title + String("\" \"") + text + String("\"") + hideOutput;
 			system(cmd.c_str());
 		}
 		void playSound( String file ) {
